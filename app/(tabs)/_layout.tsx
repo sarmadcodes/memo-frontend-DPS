@@ -12,7 +12,7 @@ export default function TabsLayout() {
 				tabBarActiveTintColor: '#3F2E20',
 				tabBarInactiveTintColor: '#9A8F80',
 				tabBarStyle: {
-					height: 60 + Math.max(12, insets.bottom),
+					height: 64 + Math.max(12, insets.bottom),
 					paddingTop: 8,
 					paddingBottom: Math.max(8, insets.bottom),
 					backgroundColor: '#FFF9F1',
@@ -42,7 +42,8 @@ export default function TabsLayout() {
 				name="create"
 				options={{
 					title: 'Create',
-					tabBarIcon: ({ color, size }) => <Feather name="plus" color={color} size={size} />,
+					tabBarIcon: ({ color }) => <Feather name="plus-circle" color={color} size={24} />,
+					tabBarActiveTintColor: '#C9A84C',
 				}}
 			/>
 			<Tabs.Screen
@@ -50,6 +51,7 @@ export default function TabsLayout() {
 				options={{
 					title: 'Recaps',
 					tabBarIcon: ({ color, size }) => <Feather name="calendar" color={color} size={size} />,
+					tabBarInactiveTintColor: '#B6AC9B',
 				}}
 			/>
 			<Tabs.Screen

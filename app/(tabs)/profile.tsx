@@ -1,14 +1,19 @@
 ﻿import { ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
+import EmptyState from '../../components/ui/EmptyState';
+import SkeletonCard from '../../components/ui/SkeletonCard';
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
+  const isLoading = false;
+  const hasPosts = true;
 
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={[styles.content, { paddingBottom: 130 + insets.bottom }]}
+      contentContainerStyle={[styles.content, { paddingTop: Math.max(12, insets.top), paddingBottom: 130 + insets.bottom }]}
       showsVerticalScrollIndicator={false}
     >
       <View style={styles.banner} />
@@ -19,10 +24,10 @@ export default function ProfileScreen() {
 
       <View style={styles.topRow}>
         <View>
-          <Text style={styles.name}>Ava Carter</Text>
-          <Text style={styles.handle}>@avawrites</Text>
+          <Text style={styles.name}>You</Text>
+          <Text style={styles.handle}>@sarmadcodes</Text>
         </View>
-        <Pressable style={styles.settingsBtn}>
+        <Pressable style={styles.settingsBtn} onPress={() => router.push('/settings')}>
           <Feather name="settings" size={17} color="#3E3528" />
         </Pressable>
       </View>
@@ -46,24 +51,30 @@ export default function ProfileScreen() {
         <Text style={styles.editBtnText}>Edit Profile</Text>
       </Pressable>
 
-      <View style={styles.tabsRow}>
-        <Pressable style={[styles.sectionTab, styles.sectionTabActive]}>
-          <Text style={[styles.sectionTabText, styles.sectionTabTextActive]}>Posts</Text>
-        </Pressable>
-        <Pressable style={styles.sectionTab}>
-          <Text style={styles.sectionTabText}>Your Notes</Text>
-        </Pressable>
-      </View>
-
       <View style={styles.sectionHead}>
-        <Text style={styles.sectionTitle}>Recent Posts</Text>
+        <Text style={styles.sectionTitle}>Posts</Text>
       </View>
 
-      <View style={styles.grid}>
-        {Array.from({ length: 9 }).map((_, i) => (
-          <View key={i} style={styles.gridItem} />
-        ))}
-      </View>
+      {isLoading ? <SkeletonCard compact /> : null}
+
+      {!isLoading && !hasPosts ? (
+        <EmptyState title="No posts yet" subtitle="Your posts will appear here once you share your first moment." />
+      ) : null}
+
+      {!isLoading && hasPosts ? (
+        <>
+          <View style={styles.pinnedCard}>
+            <Feather name="bookmark" size={14} color="#6C5A35" />
+            <Text style={styles.pinnedText}>Pinned post</Text>
+          </View>
+
+          <View style={styles.grid}>
+            {Array.from({ length: 9 }).map((_, i) => (
+              <View key={i} style={styles.gridItem} />
+            ))}
+          </View>
+        </>
+      ) : null}
     </ScrollView>
   );
 }
@@ -156,33 +167,6 @@ const styles = StyleSheet.create({
     color: '#FFF7E9',
     fontFamily: 'Inter_700Bold',
   },
-  tabsRow: {
-    marginTop: 14,
-    marginHorizontal: 16,
-    flexDirection: 'row',
-    gap: 8,
-  },
-  sectionTab: {
-    flex: 1,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#E3D9C7',
-    backgroundColor: '#F7EFE0',
-    alignItems: 'center',
-    paddingVertical: 10,
-  },
-  sectionTabActive: {
-    backgroundColor: '#2D261A',
-    borderColor: '#2D261A',
-  },
-  sectionTabText: {
-    color: '#514634',
-    fontFamily: 'Inter_700Bold',
-    fontSize: 13,
-  },
-  sectionTabTextActive: {
-    color: '#FFF7E9',
-  },
   sectionHead: {
     marginTop: 18,
     paddingHorizontal: 16,
@@ -191,6 +175,23 @@ const styles = StyleSheet.create({
     color: '#2A2419',
     fontSize: 16,
     fontFamily: 'Inter_700Bold',
+  },
+  pinnedCard: {
+    marginTop: 10,
+    marginHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E4D6BB',
+    backgroundColor: '#F8F1E0',
+    padding: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  pinnedText: {
+    color: '#5B4B2E',
+    fontFamily: 'Inter_700Bold',
+    fontSize: 12,
   },
   grid: {
     marginTop: 10,

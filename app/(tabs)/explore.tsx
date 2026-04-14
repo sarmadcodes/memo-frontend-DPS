@@ -2,8 +2,11 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useState } from 'react';
+import SkeletonCard from '../../components/ui/SkeletonCard';
+import EmptyState from '../../components/ui/EmptyState';
 
-const topics = ['Growth', 'Healing', 'Photo Dump', 'Song Moment', 'Voice Note'];
+const topics = ['Rainy Days', 'Photo Dump', 'Quiet Wins', 'Morning Notes', 'Public Diary'];
 const cards = [
   { id: '1', title: 'quiet mornings', tall: true },
   { id: '2', title: 'tiny wins', tall: false },
@@ -14,6 +17,8 @@ const cards = [
 export default function ExploreScreen() {
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
+  const [isLoading] = useState(false);
+  const hasPublicPosts = true;
   const horizontalPadding = width < 380 ? 14 : 16;
   const gap = width < 380 ? 8 : 10;
   const cardWidth = (width - horizontalPadding * 2 - gap) / 2;
@@ -66,8 +71,12 @@ export default function ExploreScreen() {
       </View>
 
       <Text style={styles.sectionTitle}>Trending public posts</Text>
+      {isLoading ? <SkeletonCard /> : null}
+      {!isLoading && !hasPublicPosts ? (
+        <EmptyState title="No public posts" subtitle="Check back soon for fresh public moments." />
+      ) : null}
       <View style={styles.masonryWrap}>
-        {cards.map((card) => (
+        {!isLoading && hasPublicPosts ? cards.map((card) => (
           <View
             key={card.id}
             style={[
@@ -81,7 +90,7 @@ export default function ExploreScreen() {
             <Text style={styles.masonryTag}>PUBLIC</Text>
             <Text style={styles.masonryTitle}>{card.title}</Text>
           </View>
-        ))}
+        )) : null}
       </View>
       </ScrollView>
     </LinearGradient>

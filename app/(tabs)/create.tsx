@@ -2,22 +2,21 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useState } from 'react';
+import SkeletonCard from '../../components/ui/SkeletonCard';
+import EmptyState from '../../components/ui/EmptyState';
 
 const types = [
   ['Freewrite', 'edit-3'],
   ['Photo Dump', 'image'],
-  ['Voice Note', 'mic'],
-  ['Micro-story', 'book-open'],
-  ['Gratitude', 'heart'],
-  ['Collage', 'grid'],
-  ['Sketch', 'pen-tool'],
-  ['Song Moment', 'music'],
 ] as const;
 
 export default function CreateScreen() {
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const isCompact = width < 390;
+  const [isLoading] = useState(false);
+  const hasTemplates = true;
 
   return (
     <LinearGradient colors={['#FFF9F1', '#F7EEE0']} style={styles.container}>
@@ -33,46 +32,40 @@ export default function CreateScreen() {
 
         <View style={styles.topNoteCard}>
           <Text style={styles.topNoteLabel}>Quick Start</Text>
-          <Text style={styles.topNoteBody}>Choose a type below, then write, record, or attach media.</Text>
+          <Text style={styles.topNoteBody}>Choose a post type, write your moment, then set visibility.</Text>
         </View>
 
-        <View style={styles.typeGrid}>
-          {types.map(([label, icon]) => (
-            <Pressable key={label} style={styles.typeCard}>
-              <Feather name={icon} size={16} color="#4A3820" />
-              <Text style={styles.typeText}>{label}</Text>
-            </Pressable>
-          ))}
-        </View>
+        {isLoading ? <SkeletonCard /> : null}
+
+        {!isLoading && !hasTemplates ? (
+          <EmptyState title="No templates" subtitle="Please pull to refresh and try again." />
+        ) : null}
+
+        {!isLoading && hasTemplates ? (
+          <View style={styles.typeGrid}>
+            {types.map(([label, icon]) => (
+              <Pressable key={label} style={styles.typeCard}>
+                <Feather name={icon} size={16} color="#4A3820" />
+                <Text style={styles.typeText}>{label}</Text>
+              </Pressable>
+            ))}
+          </View>
+        ) : null}
 
         <View style={styles.editorCard}>
           <Text style={styles.sectionTitle}>Step 2: Editor</Text>
-          <Text style={styles.paragraph}>Full-screen writing canvas, media attach, voice note, location, and card style.</Text>
+          <Text style={styles.paragraph}>Freewrite supports text. Photo Dump supports photos with an optional caption.</Text>
           <View style={styles.row}>
             <Pressable style={styles.ghostBtn}><Text style={styles.ghostText}>Attach Media</Text></Pressable>
-            <Pressable style={styles.ghostBtn}><Text style={styles.ghostText}>Voice Note</Text></Pressable>
+            <Pressable style={styles.ghostBtn}><Text style={styles.ghostText}>Add Location</Text></Pressable>
           </View>
         </View>
 
         <View style={styles.editorCard}>
-          <Text style={styles.sectionTitle}>Step 3: AI Enhancements</Text>
-          <View style={styles.row}>
-            <Pressable style={styles.aiBtn}>
-              <Feather name="star" size={14} color="#FFF7E8" />
-              <Text style={styles.aiText}>Give this a title</Text>
-            </Pressable>
-            <Pressable style={styles.aiBtn}>
-              <Feather name="feather" size={14} color="#FFF7E8" />
-              <Text style={styles.aiText}>Polish my writing</Text>
-            </Pressable>
-          </View>
-        </View>
-
-        <View style={styles.editorCard}>
-          <Text style={styles.sectionTitle}>Step 4: Visibility</Text>
-          <Text style={styles.paragraph}>Public, Followers, Mutuals, Close Friends, or Only Me.</Text>
+          <Text style={styles.sectionTitle}>Step 3: Visibility</Text>
+          <Text style={styles.paragraph}>Pick who can see this post.</Text>
           <View style={styles.visibilityRow}>
-            {['Public', 'Followers', 'Mutuals', 'Close Friends', 'Only Me'].map((v) => (
+            {['Public', 'Followers', 'Only Me'].map((v) => (
               <View key={v} style={styles.visibilityPill}>
                 <Text style={styles.visibilityText}>{v}</Text>
               </View>
@@ -183,21 +176,6 @@ const styles = StyleSheet.create({
     color: '#4A3B25',
     fontFamily: 'Inter_700Bold',
     fontSize: 12,
-  },
-  aiBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    borderRadius: 12,
-    backgroundColor: '#3D2E20',
-    paddingVertical: 10,
-  },
-  aiText: {
-    color: '#FFF5DA',
-    fontSize: 12,
-    fontFamily: 'Inter_700Bold',
   },
   visibilityRow: {
     flexDirection: 'row',

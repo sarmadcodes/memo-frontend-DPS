@@ -1,21 +1,14 @@
 ﻿import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
-const notifications = [
-  '[Maya] started following you',
-  '[Noah] felt: sending warmth',
-  '[Ava] replied with a voice note',
-  'A memory you sealed is now open',
-  'You and [Kai] both remembered Oct 3rd',
-  'This week: write about a place that changed you',
-  'Day 7 of showing up for yourself',
-  'Your Sunday reflection is here',
-  'Your October story is written',
-];
+import { dummyNotifications } from '../../constants/dummyData';
+import { useState } from 'react';
+import EmptyState from '../../components/ui/EmptyState';
+import SkeletonCard from '../../components/ui/SkeletonCard';
 
 export default function Screen() {
   const insets = useSafeAreaInsets();
+  const [isLoading] = useState(false);
 
   return (
     <ScrollView
@@ -24,16 +17,22 @@ export default function Screen() {
       showsVerticalScrollIndicator={false}
     >
       <Text style={styles.title}>Notifications</Text>
-      <Text style={styles.subtitle}>Gentle updates, no pressure, no red badges.</Text>
+      <Text style={styles.subtitle}>Followers and echoes only in v1.</Text>
 
-      {notifications.map((item, index) => (
+      {isLoading ? <SkeletonCard compact /> : null}
+
+      {!isLoading && dummyNotifications.length === 0 ? (
+        <EmptyState title="Nothing yet" subtitle="Your notifications will show up here." />
+      ) : null}
+
+      {!isLoading ? dummyNotifications.map((item, index) => (
         <View key={`${item}-${index}`} style={styles.card}>
           <View style={styles.iconWrap}>
             <Feather name="bell" size={14} color="#5A4A2A" />
           </View>
           <Text style={styles.cardText}>{item}</Text>
         </View>
-      ))}
+      )) : null}
     </ScrollView>
   );
 }
