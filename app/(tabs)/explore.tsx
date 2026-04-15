@@ -1,228 +1,338 @@
-﻿import { ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
+import React, { useState } from 'react';
+import { 
+  ScrollView, 
+  StyleSheet, 
+  Text, 
+  TextInput, 
+  View, 
+  useWindowDimensions, 
+  Pressable
+} from 'react-native';
+import { ImageBackground } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useState } from 'react';
+import Animated, { 
+  useSharedValue, 
+  useAnimatedStyle, 
+  withTiming, 
+  useAnimatedScrollHandler
+} from 'react-native-reanimated';
+import { BlurView } from 'expo-blur';
 import SkeletonCard from '../../components/ui/SkeletonCard';
 import EmptyState from '../../components/ui/EmptyState';
-
-const topics = ['Rainy Days', 'Photo Dump', 'Quiet Wins', 'Morning Notes', 'Public Diary'];
-const cards = [
-  { id: '1', title: 'quiet mornings', tall: true },
-  { id: '2', title: 'tiny wins', tall: false },
-  { id: '3', title: 'sunset train', tall: false },
-  { id: '4', title: 'old letters', tall: true },
-];
+import { EXPLORE_CHIPS, HERO_TOPICS, MASONRY_COLUMNS } from '../../constants/dummyData';
 
 export default function ExploreScreen() {
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  const [isLoading] = useState(false);
-  const hasPublicPosts = true;
-  const horizontalPadding = width < 380 ? 14 : 16;
-  const gap = width < 380 ? 8 : 10;
-  const cardWidth = (width - horizontalPadding * 2 - gap) / 2;
-  const isCompact = width < 390;
+  const [activeCategory, setActiveCategory] = useState('All');
+  
+  const scrollY = useSharedValue(0);
+  
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      scrollY.value = event.contentOffset.y;
+    },
+  });
+
+  const headerAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      opacity: scrollY.value > 50 ? withTiming(1) : withTiming(0),
+    };
+  });
+
+  const horizontalPadding = width < 380 ? 16 : 24;
+  const gap = 12;
 
   return (
-    <LinearGradient colors={['#FFF9F1', '#F7F0E5']} style={styles.container}>
-      <ScrollView
-        contentContainerStyle={[
-          styles.content,
-          {
-            paddingHorizontal: horizontalPadding,
-            paddingTop: Math.max(20, insets.top + 10),
-            paddingBottom: 132 + insets.bottom,
-          },
-        ]}
+    <View style={styles.container}>
+      <Animated.ScrollView
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
+        contentContainerStyle={{
+          paddingBottom: 120 + insets.bottom,
+        }}
         showsVerticalScrollIndicator={false}
       >
-      <Text style={[styles.title, isCompact && styles.titleCompact]}>Explore</Text>
-
-      <View style={styles.topNoteCard}>
-        <Text style={styles.topNoteLabel}>Discover</Text>
-        <Text style={styles.topNoteBody}>Find people and posts that feel like your vibe.</Text>
-      </View>
-
-      <View style={styles.searchWrap}>
-        <Feather name="search" size={16} color="#7A705D" />
-        <TextInput placeholder="Find users, stories, moods" placeholderTextColor="#9A9283" style={styles.searchInput} />
-      </View>
-
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.topicRow}>
-        {topics.map((topic) => (
-          <View key={topic} style={styles.topicPill}>
-            <Text style={styles.topicText}>{topic}</Text>
+        <LinearGradient
+          colors={['#F9F6F0', '#FCFAf8']}
+          style={[styles.headerGradient, { paddingTop: Math.max(40, insets.top + 20) }]}
+        >
+          <View style={{ paddingHorizontal: horizontalPadding }}>
+            <Text style={styles.largeTitle}>Discover</Text>
+            <Text style={styles.subtitle}>Curated moments & thoughts</Text>
+            
+            <View style={styles.searchBar}>
+              <Feather name="search" size={20} color="#8A8275" />
+              <TextInput 
+                placeholder="Search ideas, places, moods..." 
+                placeholderTextColor="#A8A196" 
+                style={styles.searchInput}
+              />
+            </View>
           </View>
-        ))}
-      </ScrollView>
+        </LinearGradient>
 
-      <View style={styles.sectionHead}>
-        <Text style={styles.sectionTitle}>People you might like</Text>
-      </View>
-      <View style={styles.suggestRow}>
-        {['Maya', 'Noah', 'Ava'].map((name) => (
-          <View key={name} style={styles.personCard}>
-            <View style={styles.avatar} />
-            <Text style={styles.personName}>{name}</Text>
-              <Text style={styles.personMeta}>public profile</Text>
-          </View>
-        ))}
-      </View>
-
-      <Text style={styles.sectionTitle}>Trending public posts</Text>
-      {isLoading ? <SkeletonCard /> : null}
-      {!isLoading && !hasPublicPosts ? (
-        <EmptyState title="No public posts" subtitle="Check back soon for fresh public moments." />
-      ) : null}
-      <View style={styles.masonryWrap}>
-        {!isLoading && hasPublicPosts ? cards.map((card) => (
-          <View
-            key={card.id}
-            style={[
-              styles.masonryCard,
-              {
-                width: cardWidth,
-                height: card.tall ? (width < 380 ? 170 : 190) : width < 380 ? 126 : 140,
-              },
-            ]}
+        <View style={styles.contentBody}>
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={[styles.categoriesContainer, { paddingHorizontal: horizontalPadding }]}
           >
-            <Text style={styles.masonryTag}>PUBLIC</Text>
-            <Text style={styles.masonryTitle}>{card.title}</Text>
+            {EXPLORE_CHIPS.map((cat) => {
+              const isActive = activeCategory === cat;
+              return (
+                <Pressable 
+                  key={cat} 
+                  onPress={() => setActiveCategory(cat)}
+                  style={[styles.categoryPill, isActive && styles.categoryPillActive]}
+                >
+                  <Text style={[styles.categoryText, isActive && styles.categoryTextActive]}>
+                    {cat}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+
+          <View style={{ paddingHorizontal: horizontalPadding, marginTop: 32 }}>
+            <Text style={styles.sectionTitle}>Featured Stories</Text>
           </View>
-        )) : null}
-      </View>
-      </ScrollView>
-    </LinearGradient>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            snapToInterval={width * 0.75 + gap}
+            decelerationRate="fast"
+            contentContainerStyle={[styles.heroScrollContainer, { paddingHorizontal: horizontalPadding }]}
+          >
+            {HERO_TOPICS.map((hero) => (
+              <ImageBackground 
+                key={hero.id} 
+                source={typeof hero.image === 'string' ? { uri: hero.image } : hero.image}
+                style={[
+                  styles.heroCard, 
+                  { width: width * 0.75 }
+                ]}
+                contentFit="cover"
+                transition={200}
+                cachePolicy="memory-disk"
+              >
+                <View style={styles.heroOverlay} />
+                <View style={styles.heroContent}>
+                  <View style={styles.heroTag}>
+                    <Text style={styles.heroTagText}>EDITOR'S PICK</Text>
+                  </View>
+                  <View>
+                    <Text style={[styles.heroTitle, { color: '#FFFFFF' }]} numberOfLines={2}>{hero.title}</Text>
+                    <Text style={[styles.heroAuthor, { color: 'rgba(255,255,255,0.8)' }]}>By {hero.author}</Text>
+                  </View>
+                </View>
+              </ImageBackground>
+            ))}
+          </ScrollView>
+
+          <View style={{ paddingHorizontal: horizontalPadding, marginTop: 40, marginBottom: 16 }}>
+            <Text style={styles.sectionTitle}>Inspired by your taste</Text>
+          </View>
+          
+          <View style={[styles.masonryContainer, { paddingHorizontal: horizontalPadding }]}>
+            {MASONRY_COLUMNS.map((col, colIndex) => (
+              <View key={`col-${colIndex}`} style={styles.masonryColumn}>
+                {col.map((item) => (
+                  <Pressable key={item.id} style={[styles.masonryItem, { height: item.height }]}>
+                    <ImageBackground
+                      source={{ uri: `https://picsum.photos/seed/${item.query}/400/600` }}
+                      style={styles.masonryImage}
+                      imageStyle={styles.masonryImageRadius}
+                      contentFit="cover"
+                      transition={200}
+                      cachePolicy="memory-disk"
+                    >
+                      <View style={styles.masonryOverlay} />
+                      <Text style={styles.masonryLabel}>{item.title}</Text>
+                    </ImageBackground>
+                  </Pressable>
+                ))}
+              </View>
+            ))}
+          </View>
+        </View>
+      </Animated.ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFF9F1',
+    backgroundColor: '#FCFAf8',
   },
-  content: {
-    gap: 14,
+  floatingHeader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+    overflow: 'hidden',
   },
-  title: {
-    fontSize: 30,
-    color: '#2A2418',
-    fontFamily: 'Inter_700Bold',
-  },
-  titleCompact: {
-    fontSize: 28,
-  },
-  topNoteCard: {
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#E7DDCB',
-    backgroundColor: '#FFFEFA',
-    paddingHorizontal: 14,
+  blurContainer: {
     paddingVertical: 12,
+    alignItems: 'center',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(0,0,0,0.05)',
   },
-  topNoteLabel: {
-    color: '#6A5323',
-    fontSize: 12,
+  floatingHeaderTitle: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 16,
+    color: '#1A1814',
+  },
+  headerGradient: {
+    paddingBottom: 32,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0EBE0',
+  },
+  largeTitle: {
     fontFamily: 'Inter_700Bold',
+    fontSize: 36,
+    color: '#1A1814',
+    letterSpacing: -1,
   },
-  topNoteBody: {
-    marginTop: 4,
-    color: '#4B3E2C',
+  subtitle: {
     fontFamily: 'Inter_400Regular',
+    fontSize: 16,
+    color: '#8A8275',
+    marginTop: 8,
   },
-  searchWrap: {
-    marginTop: 4,
+  searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    marginTop: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.03,
+    shadowRadius: 12,
+    elevation: 2,
+    gap: 12,
     borderWidth: 1,
-    borderColor: '#E3DCCB',
-    backgroundColor: '#FFFEFA',
-    borderRadius: 14,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    borderColor: '#F0EBE0',
   },
   searchInput: {
     flex: 1,
-    color: '#2E2A22',
     fontFamily: 'Inter_400Regular',
+    fontSize: 16,
+    color: '#1A1814',
   },
-  topicRow: {
-    gap: 8,
+  contentBody: {
+    paddingTop: 24,
   },
-  topicPill: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 999,
-    backgroundColor: '#EFE7D7',
+  categoriesContainer: {
+    gap: 10,
   },
-  topicText: {
-    color: '#5F4F2D',
-    fontSize: 12,
-    fontFamily: 'Inter_700Bold',
+  categoryPill: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: '#E6E1D6',
+    backgroundColor: '#FCFAf8',
   },
-  sectionHead: {
-    marginTop: 4,
+  categoryPillActive: {
+    backgroundColor: '#1A1814',
+    borderColor: '#1A1814',
+  },
+  categoryText: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 14,
+    color: '#6e685f',
+  },
+  categoryTextActive: {
+    color: '#FFFFFF',
   },
   sectionTitle: {
-    fontSize: 16,
-    color: '#29241A',
-    fontFamily: 'Inter_700Bold',
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 20,
+    color: '#1A1814',
+    letterSpacing: -0.5,
   },
-  suggestRow: {
-    flexDirection: 'row',
-    gap: 8,
+  heroScrollContainer: {
+    gap: 12,
+    marginTop: 16,
   },
-  personCard: {
+  heroCard: {
+    height: 380,
+    borderRadius: 28,
+    overflow: 'hidden',
+  },
+  heroOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+  },
+  heroContent: {
     flex: 1,
-    alignItems: 'center',
-    borderRadius: 14,
-    backgroundColor: '#FFFDF8',
-    borderWidth: 1,
-    borderColor: '#E7DECE',
-    padding: 10,
-  },
-  avatar: {
-    height: 44,
-    width: 44,
-    borderRadius: 22,
-    backgroundColor: '#DAC9A2',
-  },
-  personName: {
-    marginTop: 8,
-    color: '#2F291E',
-    fontFamily: 'Inter_700Bold',
-  },
-  personMeta: {
-    fontSize: 11,
-    color: '#7A705E',
-    fontFamily: 'Inter_400Regular',
-  },
-  masonryWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    padding: 24,
     justifyContent: 'space-between',
-    rowGap: 10,
-    columnGap: 10,
   },
-  masonryCard: {
+  heroTag: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(255,255,255,0.8)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: 16,
-    backgroundColor: '#EFE2CC',
-    padding: 12,
-    justifyContent: 'space-between',
-    borderWidth: 1,
-    borderColor: '#E4D8C1',
   },
-  masonryTag: {
+  heroTagText: {
+    fontFamily: 'Inter_700Bold',
     fontSize: 10,
-    color: '#6E5A2C',
+    color: '#1A1814',
     letterSpacing: 1,
-    fontFamily: 'Inter_700Bold',
   },
-  masonryTitle: {
-    fontSize: 17,
-    color: '#31281A',
+  heroTitle: {
     fontFamily: 'Inter_700Bold',
+    fontSize: 28,
+    color: '#1A1814',
+    letterSpacing: -0.5,
+    marginBottom: 8,
   },
+  heroAuthor: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 14,
+    color: 'rgba(26,24,20,0.7)',
+  },
+  masonryContainer: {
+    flexDirection: 'row',
+    gap: 12,
+    paddingBottom: 24,
+  },
+  masonryColumn: {
+    flex: 1,
+    gap: 12,
+  },
+  masonryItem: {
+    width: '100%',
+    borderRadius: 24,
+    overflow: 'hidden',
+  },
+  masonryImage: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'flex-end',
+    padding: 16,
+  },
+  masonryImageRadius: {
+    borderRadius: 24,
+  },
+  masonryOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.25)',
+  },
+  masonryLabel: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 18,
+    color: '#FFFFFF',
+    letterSpacing: -0.5,
+  }
 });

@@ -3,17 +3,20 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState } from 'react';
+import { useRouter } from 'expo-router';
 import SkeletonCard from '../../components/ui/SkeletonCard';
 import EmptyState from '../../components/ui/EmptyState';
 
 const types = [
-  ['Freewrite', 'edit-3'],
-  ['Photo Dump', 'image'],
+  ['Freewrite', 'edit-3', '/create/editor?type=freewrite'],
+  ['Photo Dump', 'image', '/create/editor?type=photo_dump'],
+  ['Time Capsule', 'clock', '/create/time-capsule'],
 ] as const;
 
 export default function CreateScreen() {
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const isCompact = width < 390;
   const [isLoading] = useState(false);
   const hasTemplates = true;
@@ -28,11 +31,11 @@ export default function CreateScreen() {
         showsVerticalScrollIndicator={false}
       >
         <Text style={[styles.title, isCompact && styles.titleCompact]}>Create</Text>
-        <Text style={styles.subtitle}>Pick a format and capture your moment softly.</Text>
+        <Text style={styles.subtitle}>What's on your mind?</Text>
 
         <View style={styles.topNoteCard}>
           <Text style={styles.topNoteLabel}>Quick Start</Text>
-          <Text style={styles.topNoteBody}>Choose a post type, write your moment, then set visibility.</Text>
+          <Text style={styles.topNoteBody}>Choose a format below to start expressing your thoughts.</Text>
         </View>
 
         {isLoading ? <SkeletonCard /> : null}
@@ -43,39 +46,24 @@ export default function CreateScreen() {
 
         {!isLoading && hasTemplates ? (
           <View style={styles.typeGrid}>
-            {types.map(([label, icon]) => (
-              <Pressable key={label} style={styles.typeCard}>
-                <Feather name={icon} size={16} color="#4A3820" />
-                <Text style={styles.typeText}>{label}</Text>
+            {types.map(([label, icon, route]) => (
+              <Pressable 
+                key={label} 
+                style={styles.typeCard}
+                onPress={() => router.push(route)}
+              >
+                <View style={styles.iconContainer}>
+                  <Feather name={icon} size={20} color="#6A5323" />
+                </View>
+                <View style={styles.typeTextContainer}>
+                  <Text style={styles.typeText}>{label}</Text>
+                  <Feather name="chevron-right" size={16} color="#A89F91" />
+                </View>
               </Pressable>
             ))}
           </View>
         ) : null}
 
-        <View style={styles.editorCard}>
-          <Text style={styles.sectionTitle}>Step 2: Editor</Text>
-          <Text style={styles.paragraph}>Freewrite supports text. Photo Dump supports photos with an optional caption.</Text>
-          <View style={styles.row}>
-            <Pressable style={styles.ghostBtn}><Text style={styles.ghostText}>Attach Media</Text></Pressable>
-            <Pressable style={styles.ghostBtn}><Text style={styles.ghostText}>Add Location</Text></Pressable>
-          </View>
-        </View>
-
-        <View style={styles.editorCard}>
-          <Text style={styles.sectionTitle}>Step 3: Visibility</Text>
-          <Text style={styles.paragraph}>Pick who can see this post.</Text>
-          <View style={styles.visibilityRow}>
-            {['Public', 'Followers', 'Only Me'].map((v) => (
-              <View key={v} style={styles.visibilityPill}>
-                <Text style={styles.visibilityText}>{v}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        <Pressable style={styles.shareButton}>
-          <Text style={styles.shareText}>Share</Text>
-        </Pressable>
       </ScrollView>
     </LinearGradient>
   );
@@ -120,91 +108,38 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_400Regular',
   },
   typeGrid: {
-    marginTop: 2,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
+    marginTop: 10,
+    flexDirection: 'column',
+    gap: 12,
   },
   typeCard: {
-    width: '48.8%',
-    borderRadius: 14,
-    padding: 12,
+    width: '100%',
+    borderRadius: 16,
+    padding: 16,
     borderWidth: 1,
     borderColor: '#E7DDCB',
     backgroundColor: '#FFFDF8',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 16,
+  },
+  iconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#F3ECD8',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  typeTextContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   typeText: {
     color: '#362B1C',
-    fontFamily: 'Inter_700Bold',
-    fontSize: 13,
-  },
-  editorCard: {
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#E7DDCB',
-    backgroundColor: '#FFFCF6',
-    padding: 14,
-    gap: 10,
-  },
-  sectionTitle: {
-    color: '#2F271A',
-    fontSize: 15,
-    fontFamily: 'Inter_700Bold',
-  },
-  paragraph: {
-    color: '#675A45',
-    lineHeight: 20,
-    fontFamily: 'Inter_400Regular',
-  },
-  row: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  ghostBtn: {
-    flex: 1,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E2D4BF',
-    paddingVertical: 10,
-    alignItems: 'center',
-    backgroundColor: '#F8F1E4',
-  },
-  ghostText: {
-    color: '#4A3B25',
-    fontFamily: 'Inter_700Bold',
-    fontSize: 12,
-  },
-  visibilityRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  visibilityPill: {
-    borderRadius: 999,
-    backgroundColor: '#F3EBDD',
-    borderWidth: 1,
-    borderColor: '#E2D3B8',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
-  visibilityText: {
-    color: '#4A3B25',
-    fontSize: 11,
-    fontFamily: 'Inter_700Bold',
-  },
-  shareButton: {
-    borderRadius: 14,
-    backgroundColor: '#2C2418',
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginTop: 4,
-  },
-  shareText: {
-    color: '#FFF8E8',
-    fontSize: 15,
-    fontFamily: 'Inter_700Bold',
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 16,
   },
 });

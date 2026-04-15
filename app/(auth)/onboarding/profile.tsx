@@ -3,13 +3,43 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text
 import { useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import { useUser } from '@clerk/expo';
 import InputField from '../../../components/ui/InputField';
 import PrimaryButton from '../../../components/ui/PrimaryButton';
 
 export default function Screen() {
   const insets = useSafeAreaInsets();
+  const { user } = useUser();
   const [displayName, setDisplayName] = useState('');
   const [bio, setBio] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [errorText, setErrorText] = useState('');
+
+  const onUpdateProfile = async () => {
+    if (!user) return;
+    setLoading(true);
+    setErrorText('');
+
+    try {
+      // In Clerk we can split the Display Name into First/Last name for their data model
+      const parts = displayName.trim().split(' ');
+      const firstName = parts[0];
+      const lastName = parts.slice(1).join(' ') || '';
+
+      await user.update({
+        firstName,
+        lastName,
+      });
+      // Optionally we'd push the Bio and Avatar URL to our own backend or clerk's publicMetadata
+      // But for now, just let them finish onboarding!
+      router.push('/(auth)/onboarding/done');
+    } catch (err: any) {
+      console.error(JSON.stringify(err, null, 2));
+      setErrorText(err.message || 'Something went wrong saving your profile.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -40,7 +70,18 @@ export default function Screen() {
           multiline
         />
 
-        <PrimaryButton label="Continue" onPress={() => router.push('/(auth)/onboarding/done')} disabled={!displayName.trim()} />
+        {errorText ? <Text style={styles.errorText}>{errorText}</Text> : null}
+
+        <PrimaryButton 
+          label={loading ? 'Saving...' : 'Finish Setup'} 
+          onPress={onUpdateProfile} 
+          disabled={!displayName.trim() || loading} 
+        />
+        <PrimaryButton 
+          label="Skip for now" 
+          variant="secondary" 
+          onPress={() => router.push('/(auth)/onboarding/done')} 
+        />
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -49,6 +90,7 @@ export default function Screen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FAFAF7' },
   content: { paddingHorizontal: 16, gap: 12 },
+  errorText: { color: '#D9534F', fontSize: 13, fontFamily: 'Inter_400Regular' },
   bannerPlaceholder: {
     borderRadius: 14,
     height: 110,

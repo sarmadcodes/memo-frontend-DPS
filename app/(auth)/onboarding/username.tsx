@@ -2,22 +2,41 @@
 import { useMemo, useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import { useUser } from '@clerk/expo';
 import InputField from '../../../components/ui/InputField';
 import PrimaryButton from '../../../components/ui/PrimaryButton';
 
-const takenNames = new Set(['memo', 'sara', 'admin']);
-
 export default function Screen() {
   const insets = useSafeAreaInsets();
+  const { user } = useUser();
   const [username, setUsername] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [errorText, setErrorText] = useState('');
 
   const status = useMemo(() => {
     if (!username.trim()) return 'idle';
     if (username.length < 3 || username.length > 20) return 'invalid';
     if (!/^[a-z0-9_]+$/i.test(username)) return 'invalid';
-    if (takenNames.has(username.toLowerCase())) return 'taken';
     return 'available';
   }, [username]);
+
+  const onUpdateUsername = async () => {
+    if (status !== 'available' || !user) return;
+    
+    setLoading(true);
+    setErrorText('');
+    
+    try {
+      await user.update({ username });
+      router.push('/(auth)/onboarding/profile');
+    } catch (err: any) {
+      console.error(JSON.stringify(err, null, 2));
+      // Clerk throws an error if the username is already taken globally
+      setErrorText(err.errors?.[0]?.message || 'Something went wrong. Username might be taken.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const suggestions = useMemo(
     () => [`${username}memo`, `${username}_writes`, `${username}daily`].filter((x) => x.length <= 20),
@@ -36,26 +55,17 @@ export default function Screen() {
         <InputField label="Username" value={username} onChangeText={setUsername} placeholder="your_name" />
 
         <Text style={styles.status}>
-          {status === 'idle' && 'Checking availability...'}
+          {status === 'idle' && 'Type a username...'}
           {status === 'invalid' && 'Use 3-20 letters, numbers, or underscores.'}
-          {status === 'taken' && 'Username taken.'}
-          {status === 'available' && 'Username available.'}
+          {status === 'available' && 'Username format is valid!'}
         </Text>
-
-        {status === 'taken' ? (
-          <View style={styles.suggestionRow}>
-            {suggestions.map((name) => (
-              <Pressable key={name} style={({ pressed }) => [styles.pill, pressed ? styles.pressed : null]} onPress={() => setUsername(name)}>
-                <Text style={styles.pillText}>{name}</Text>
-              </Pressable>
-            ))}
-          </View>
-        ) : null}
+        
+        {errorText ? <Text style={styles.errorText}>{errorText}</Text> : null}
 
         <PrimaryButton
-          label="Continue"
-          onPress={() => router.push('/(auth)/onboarding/profile')}
-          disabled={status !== 'available'}
+          label={loading ? "Checking & Saving..." : "Continue"}
+          onPress={onUpdateUsername}
+          disabled={status !== 'available' || loading}
         />
       </ScrollView>
     </KeyboardAvoidingView>
@@ -68,6 +78,7 @@ const styles = StyleSheet.create({
   title: { color: '#2A2418', fontSize: 30, fontFamily: 'Inter_700Bold' },
   subtitle: { color: '#6E604C', fontFamily: 'Inter_400Regular' },
   status: { color: '#6A5E48', fontFamily: 'Inter_400Regular', fontSize: 12 },
+  errorText: { color: '#D9534F', fontSize: 13, fontFamily: 'Inter_400Regular', marginBottom: 8 },
   suggestionRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   pill: {
     borderRadius: 999,

@@ -1,12 +1,13 @@
-﻿import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+﻿import { Pressable, ScrollView, StyleSheet, Switch, Text, View, Alert } from 'react-native';
 import { useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import EmptyState from '../../components/ui/EmptyState';
 import SkeletonCard from '../../components/ui/SkeletonCard';
 
-function Row({ label, danger = false }: { label: string; danger?: boolean }) {
+function Row({ label, danger = false, onPress }: { label: string; danger?: boolean; onPress?: () => void }) {
   return (
-    <Pressable style={({ pressed }) => [styles.row, pressed ? styles.pressed : null]}>
+    <Pressable onPress={onPress} style={({ pressed }) => [styles.row, pressed ? styles.pressed : null]}>
       <Text style={[styles.rowText, danger ? styles.dangerText : null]}>{label}</Text>
     </Pressable>
   );
@@ -14,6 +15,7 @@ function Row({ label, danger = false }: { label: string; danger?: boolean }) {
 
 export default function Screen() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const [biometricLock, setBiometricLock] = useState(false);
   const [isLoading] = useState(false);
   const hasSettings = true;
@@ -33,22 +35,26 @@ export default function Screen() {
       ) : null}
 
       {!isLoading && hasSettings ? <View style={styles.group}>
-        <Row label="Edit Profile" />
-        <Row label="Change Username" />
-        <Row label="Privacy (Default Visibility)" />
+        <Row label="Edit Profile" onPress={() => router.push('/settings/edit-profile')} />
+        <Row label="Change Username" onPress={() => Alert.alert('Action', 'Change Username pressed')} />
+        <Row label="Privacy (Default Visibility)" onPress={() => Alert.alert('Action', 'Privacy pressed')} />
         <View style={styles.rowSwitch}>
           <Text style={styles.rowText}>Biometric Lock</Text>
           <Switch value={biometricLock} onValueChange={setBiometricLock} trackColor={{ true: '#C9A84C' }} />
         </View>
-        <Row label="Notification Preferences" />
+        <Row label="Notification Preferences" onPress={() => Alert.alert('Action', 'Notification Preferences pressed')} />
       </View> : null}
 
       <Text style={styles.groupTitle}>Account</Text>
       {!isLoading && hasSettings ? <View style={styles.group}>
-        <Row label="Change Password" />
-        <Row label="Sign Out" />
-        <Row label="Delete Account" danger />
+        <Row label="Change Password" onPress={() => Alert.alert('Action', 'Change Password pressed')} />
+        <Row label="Sign Out" onPress={() => Alert.alert('Action', 'Sign Out pressed')} />
+        <Row label="Delete Account" danger onPress={() => Alert.alert('Action', 'Delete Account pressed')} />
       </View> : null}
+
+      <View style={styles.footerContainer}>
+        <Text style={styles.footerText}>sarmss</Text>
+      </View>
     </ScrollView>
   );
 }
@@ -90,4 +96,14 @@ const styles = StyleSheet.create({
   rowText: { color: '#3E3324', fontFamily: 'Inter_400Regular' },
   dangerText: { color: '#A33A3A', fontFamily: 'Inter_700Bold' },
   pressed: { opacity: 0.82 },
+  footerContainer: {
+    marginTop: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  footerText: {
+    color: '#A69B86',
+    fontFamily: 'Lora_400Regular_Italic',
+    fontSize: 14,
+  },
 });

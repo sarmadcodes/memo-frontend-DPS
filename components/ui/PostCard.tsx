@@ -1,5 +1,7 @@
-import { Feather } from '@expo/vector-icons';
+import { Feather, Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
 import { DummyPost } from '../../constants/dummyData';
 import EchoBubble from './EchoBubble';
 import UserAvatar from './UserAvatar';
@@ -11,17 +13,26 @@ type PostCardProps = {
 };
 
 export default function PostCard({ post, onPress }: PostCardProps) {
+  const router = useRouter();
+  const [liked, setLiked] = useState(false);
+  const [saved, setSaved] = useState(false);
+
   return (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => [styles.card, pressed ? styles.pressed : null]}
     >
       <View style={styles.authorRow}>
-        <UserAvatar name={post.author.name} size={38} />
-        <View style={styles.metaCol}>
+        <Pressable onPress={() => router.push(`/profile/${post.author.username}`)}>
+          <UserAvatar name={post.author.name} size={38} />
+        </Pressable>
+        <Pressable 
+          style={styles.metaCol}
+          onPress={() => router.push(`/profile/${post.author.username}`)}
+        >
           <Text style={styles.name}>{post.author.name}</Text>
           <Text style={styles.handle}>@{post.author.username}</Text>
-        </View>
+        </Pressable>
         <VisibilityBadge visibility={post.visibility} />
       </View>
 
@@ -38,9 +49,18 @@ export default function PostCard({ post, onPress }: PostCardProps) {
       </View>
 
       <View style={styles.actionsRow}>
-        <View style={styles.actionBtn}><Feather name="message-circle" size={16} color="#5C503C" /></View>
-        <View style={styles.actionBtn}><Feather name="bookmark" size={16} color="#5C503C" /></View>
-        <View style={styles.actionBtn}><Feather name="more-horizontal" size={16} color="#5C503C" /></View>
+        <Pressable style={styles.actionBtn} onPress={(e) => { e.stopPropagation(); setLiked(!liked); }}>
+          <Ionicons name={liked ? "heart" : "heart-outline"} size={18} color={liked ? "#D9534F" : "#5C503C"} />
+        </Pressable>
+        <Pressable style={styles.actionBtn} onPress={(e) => { e.stopPropagation(); router.push(`/post/${post.id}`); }}>
+          <Feather name="message-circle" size={16} color="#5C503C" />
+        </Pressable>
+        <Pressable style={styles.actionBtn} onPress={(e) => { e.stopPropagation(); setSaved(!saved); }}>
+          <Ionicons name={saved ? "bookmark" : "bookmark-outline"} size={16} color="#5C503C" />
+        </Pressable>
+        <Pressable style={styles.actionBtn} onPress={(e) => { e.stopPropagation(); }}>
+          <Feather name="more-horizontal" size={16} color="#5C503C" />
+        </Pressable>
       </View>
     </Pressable>
   );

@@ -1,15 +1,18 @@
-﻿import { Feather } from '@expo/vector-icons';
-import { useLocalSearchParams } from 'expo-router';
+﻿import { Feather, Ionicons } from '@expo/vector-icons';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import {
-  Image,
   Modal,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { dummyPosts } from '../../constants/dummyData';
 import UserAvatar from '../../components/ui/UserAvatar';
@@ -22,17 +25,39 @@ const presetEchoes = ['this hit different', 'I felt this', 'sending warmth', 'yo
 export default function Screen() {
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const router = useRouter();
   const [isLoading] = useState(false);
   const [saved, setSaved] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [zoomUrl, setZoomUrl] = useState<string | null>(null);
+  const [zoomUrl, setZoomUrl] = useState<any | null>(null);
+  const [commentText, setCommentText] = useState('');
+  const [localComments, setLocalComments] = useState<{ id: string; user: string; text: string; time: string }[]>([
+    { id: '1', user: 'ohmahad', text: 'khoobsurat', time: '2h' },
+    { id: '2', user: 'sohaib', text: 'kyaa baat hai yaal', time: '1h' },
+  ]);
+
+  const handleSendComment = () => {
+    if (!commentText.trim()) return;
+    setLocalComments(prev => [...prev, {
+      id: Math.random().toString(),
+      user: 'sarmadd',
+      text: commentText.trim(),
+      time: 'Now',
+    }]);
+    setCommentText('');
+  };
 
   const post = useMemo(() => dummyPosts.find((item) => item.id === id), [id]);
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView 
+      style={styles.container} 
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+    >
       <ScrollView
-        contentContainerStyle={{ paddingTop: Math.max(20, insets.top + 10), paddingBottom: 24 + insets.bottom, paddingHorizontal: 16, gap: 12 }}
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingTop: Math.max(20, insets.top + 10), paddingBottom: 24, paddingHorizontal: 16, gap: 12 }}
       >
         <View style={styles.headerRow}>
           <Text style={styles.title}>Post</Text>
@@ -54,22 +79,31 @@ export default function Screen() {
 
         {!isLoading && post ? (
           <View style={styles.card}>
-            <View style={styles.authorRow}>
+            <Pressable 
+              style={({ pressed }) => [styles.authorRow, pressed && { opacity: 0.7 }]}
+              onPress={() => router.push(`/profile/${post.author.username}`)}
+            >
               <UserAvatar name={post.author.name} size={40} />
               <View style={styles.metaCol}>
                 <Text style={styles.author}>{post.author.name}</Text>
                 <Text style={styles.time}>{new Date(post.createdAt).toLocaleString()}</Text>
               </View>
               <VisibilityBadge visibility={post.visibility} />
-            </View>
+            </Pressable>
 
             <Text style={styles.body}>{post.content}</Text>
 
             {post.mediaUrls.length ? (
               <View style={styles.photoStack}>
-                {post.mediaUrls.map((url) => (
-                  <Pressable key={url} onPress={() => setZoomUrl(url)}>
-                    <Image source={{ uri: url }} style={styles.photo} />
+                {post.mediaUrls.map((url, i) => (
+                  <Pressable key={i} onPress={() => setZoomUrl(url)}>
+                    <Image 
+                      source={typeof url === 'string' ? { uri: url } : url} 
+                      style={styles.photo} 
+                      contentFit="cover"
+                      transition={200}
+                      cachePolicy="memory-disk"
+                    />
                   </Pressable>
                 ))}
               </View>
@@ -83,6 +117,32 @@ export default function Screen() {
                 </View>
               ))}
             </View>
+
+            <View style={styles.divider} />
+            <Text style={styles.commentsTitle}>Comments</Text>
+            <View style={styles.commentsWrap}>
+              {localComments.length > 0 ? (
+                localComments.map((comment) => (
+                  <View key={comment.id} style={styles.commentItem}>
+                    <Pressable onPress={() => router.push(`/profile/${comment.user}`)}>
+                      <UserAvatar name={comment.user} size={32} />
+                    </Pressable>
+                    <View style={styles.commentContent}>
+                      <View style={styles.commentHeader}>
+                        <Pressable onPress={() => router.push(`/profile/${comment.user}`)}>
+                          <Text style={styles.commentAuthor}>@{comment.user}</Text>
+                        </Pressable>
+                        <Text style={styles.commentTime}>{comment.time}</Text>
+                      </View>
+                      <Text style={styles.commentText}>{comment.text}</Text>
+                    </View>
+                  </View>
+                ))
+              ) : (
+                <Text style={styles.noCommentsText}>No comments yet. Be the first!</Text>
+              )}
+            </View>
+
           </View>
         ) : null}
 
@@ -94,6 +154,27 @@ export default function Screen() {
           </View>
         ) : null}
       </ScrollView>
+
+      {post ? (
+        <View style={[styles.commentBar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+          <TextInput
+            style={styles.commentInput}
+            placeholder="Add a comment..."
+            placeholderTextColor="#8A7D67"
+            value={commentText}
+            onChangeText={setCommentText}
+            multiline
+            maxLength={300}
+          />
+          <Pressable
+            style={({ pressed }) => [styles.sendBtn, (!commentText.trim() || pressed) && { opacity: 0.5 }]}
+            onPress={handleSendComment}
+            disabled={!commentText.trim()}
+          >
+            <Ionicons name="send" size={20} color="#F5EFE2" />
+          </Pressable>
+        </View>
+      ) : null}
 
       <Modal visible={!!zoomUrl} transparent animationType="fade" onRequestClose={() => setZoomUrl(null)}>
         <View style={styles.modalBackdrop}>
@@ -107,11 +188,11 @@ export default function Screen() {
             minimumZoomScale={1}
             centerContent
           >
-            {zoomUrl ? <Image source={{ uri: zoomUrl }} style={styles.zoomImage} resizeMode="contain" /> : null}
+            {zoomUrl ? <Image source={typeof zoomUrl === 'string' ? { uri: zoomUrl } : zoomUrl} style={styles.zoomImage} resizeMode="contain" /> : null}
           </ScrollView>
         </View>
       </Modal>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -181,4 +262,46 @@ const styles = StyleSheet.create({
   zoomWrap: { flex: 1 },
   zoomContent: { flexGrow: 1, alignItems: 'center', justifyContent: 'center' },
   zoomImage: { width: '100%', height: 360 },
+  divider: { height: 1, backgroundColor: '#E4DAC5', marginVertical: 8 },
+  commentsTitle: { color: '#2F271A', fontFamily: 'Inter_700Bold', fontSize: 16, marginBottom: 4 },
+  commentsWrap: { gap: 16 },
+  commentItem: { flexDirection: 'row', gap: 10 },
+  commentContent: { flex: 1, gap: 2 },
+  commentHeader: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  commentAuthor: { color: '#2F271A', fontFamily: 'Inter_700Bold', fontSize: 13 },
+  commentTime: { color: '#7B705B', fontFamily: 'Inter_400Regular', fontSize: 11 },
+  commentText: { color: '#433722', fontFamily: 'Inter_400Regular', fontSize: 14, lineHeight: 20 },
+  noCommentsText: { color: '#8A7D67', fontFamily: 'Inter_400Regular', fontSize: 14, fontStyle: 'italic', textAlign: 'center', paddingVertical: 12 },
+  commentBar: {
+    backgroundColor: '#FFFDFA',
+    borderTopWidth: 1,
+    borderTopColor: '#E4DAC5',
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  commentInput: {
+    flex: 1,
+    backgroundColor: '#F5EEE0',
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: 10,
+    maxHeight: 100,
+    minHeight: 40,
+    color: '#2F271A',
+    fontFamily: 'Inter_400Regular',
+    fontSize: 15,
+  },
+  sendBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#3E3528',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingLeft: 2, // optical center for send icon
+  },
 });

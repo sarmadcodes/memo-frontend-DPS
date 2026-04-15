@@ -1,9 +1,10 @@
-﻿import { ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
+﻿import { ScrollView, StyleSheet, Text, View, Pressable, Image } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import EmptyState from '../../components/ui/EmptyState';
 import SkeletonCard from '../../components/ui/SkeletonCard';
+import { dummyProfile } from '../../constants/dummyData';
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
@@ -13,32 +14,35 @@ export default function ProfileScreen() {
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={[styles.content, { paddingTop: Math.max(12, insets.top), paddingBottom: 130 + insets.bottom }]}
+      contentContainerStyle={[styles.content, { paddingBottom: 130 + insets.bottom }]}
       showsVerticalScrollIndicator={false}
+      contentInsetAdjustmentBehavior="never"
     >
-      <View style={styles.banner} />
+      <View style={styles.banner}>
+        {dummyProfile.banner && <Image source={dummyProfile.banner} style={styles.bannerImage} />}
+      </View>
 
       <View style={styles.avatarWrap}>
-        <View style={styles.avatar} />
+        <Image source={dummyProfile.avatar} style={styles.avatar} />
       </View>
 
       <View style={styles.topRow}>
         <View>
-          <Text style={styles.name}>You</Text>
-          <Text style={styles.handle}>@sarmadcodes</Text>
+          <Text style={styles.name}>{dummyProfile.name}</Text>
+          <Text style={styles.handle}>@{dummyProfile.username}</Text>
         </View>
         <Pressable style={styles.settingsBtn} onPress={() => router.push('/settings')}>
           <Feather name="settings" size={17} color="#3E3528" />
         </Pressable>
       </View>
 
-      <Text style={styles.bio}>Quiet reflections, warm photos, and tiny stories I do not want to forget.</Text>
+      <Text style={styles.bio}>{dummyProfile.bio}</Text>
 
       <View style={styles.statsRow}>
         {[
-          ['128', 'Posts'],
-          ['2.3K', 'Followers'],
-          ['684', 'Following'],
+          [dummyProfile.stats.posts, 'Posts'],
+          [dummyProfile.stats.followers, 'Followers'],
+          [dummyProfile.stats.following, 'Following'],
         ].map(([value, label]) => (
           <View key={label} style={styles.statItem}>
             <Text style={styles.statValue}>{value}</Text>
@@ -63,14 +67,24 @@ export default function ProfileScreen() {
 
       {!isLoading && hasPosts ? (
         <>
-          <View style={styles.pinnedCard}>
-            <Feather name="bookmark" size={14} color="#6C5A35" />
-            <Text style={styles.pinnedText}>Pinned post</Text>
-          </View>
+          {dummyProfile.pinnedPost && (
+            <View style={styles.pinnedCard}>
+              <Feather name="bookmark" size={14} color="#6C5A35" />
+              <Text style={styles.pinnedText}>{dummyProfile.pinnedPost.title}</Text>
+            </View>
+          )}
 
           <View style={styles.grid}>
-            {Array.from({ length: 9 }).map((_, i) => (
-              <View key={i} style={styles.gridItem} />
+            {dummyProfile.gridPosts.map((item, i) => (
+              item.type === 'PHOTO' ? (
+                <Image key={item.id || i} source={item.media} style={styles.gridItem} />
+              ) : (
+                <View key={item.id || i} style={[styles.gridItem, styles.gridTextItem]}>
+                  <Text style={styles.gridText} numberOfLines={4}>
+                    {item.content}
+                  </Text>
+                </View>
+              )
             ))}
           </View>
         </>
@@ -90,6 +104,12 @@ const styles = StyleSheet.create({
   banner: {
     height: 150,
     backgroundColor: '#DCC9A6',
+    overflow: 'hidden',
+  },
+  bannerImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
   },
   avatarWrap: {
     marginTop: -38,
@@ -205,5 +225,18 @@ const styles = StyleSheet.create({
     aspectRatio: 1,
     borderRadius: 10,
     backgroundColor: '#D7CAB2',
+    resizeMode: 'cover',
+  },
+  gridTextItem: {
+    backgroundColor: '#F8F1E0',
+    padding: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  gridText: {
+    fontSize: 12,
+    color: '#5B4B2E',
+    fontFamily: 'Lora_400Regular',
+    textAlign: 'center',
   },
 });
